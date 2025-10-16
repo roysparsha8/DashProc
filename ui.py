@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk, filedialog, messagebox
 from schedulers import Scheduler
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import csv, random
+import csv
 
 #iwc = Initial Window Configuration = (width, height, x_topleft, y_topleft, name, background_color)
 class App(Tk):

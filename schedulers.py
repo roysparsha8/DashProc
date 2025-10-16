@@ -11,11 +11,15 @@
 # ts - Time Slice, tm - Time
 # pdl - Priority Distribution List, p - Current Process's Priority, ariv - Current Process's arrival time, brst - Current Process Burst Time 
 
-import heapq
+
+# FIX - SRTF logic
+import heapq, random
 from collections import deque
+import matplotlib as mlp
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import random
+
+mlp.rcParams['toolbar'] = 'None'
 
 class Scheduler:
     def __init__(self, proclist):
@@ -29,12 +33,20 @@ class Scheduler:
         tp = self.data[4]; cu = self.data[5]; csc = self.data[6]
         wt.sort(key=lambda x : x[0])
         tat.sort(key=lambda x : x[0])
+        cell_text = []; total_wt = 0; total_tat = 0; total_rt = 0
+        for i in range(0, len(wt)):
+            cell_text.append([wt[i][0], wt[i][1], tat[i][1], rt[i][1]])
+            total_wt += wt[i][1]
+            total_tat += tat[i][1]
+            total_rt += rt[i][1]
+        cell_text.append(['Average', total_wt / len(wt), total_tat / len(tat), total_rt / len(rt)])
         plt.style.use('dark_background')
-        fig = plt.figure(figsize=(8, 6), num=title)
-        ax1 = plt.subplot2grid((2, 2), (0, 0), fig=fig)
-        ax2 = plt.subplot2grid((2, 2), (0, 1), fig=fig)
-        ax3 = plt.subplot2grid((2, 2), (1, 0), fig=fig)
-        ax4 = plt.subplot2grid((2, 2), (1, 1), fig=fig)
+        fig, axesDict = plt.subplot_mosaic('AB\nCD', layout='constrained')
+        fig.canvas.manager.set_window_title(title=title)
+        ax1 = axesDict['A']
+        ax2 = axesDict['B']
+        ax3 = axesDict['C']
+        ax4 = axesDict['D']
         colors = dict()
         for interval in intervals:
             if interval[0] not in colors:
@@ -44,6 +56,8 @@ class Scheduler:
         ax1.set_ylabel('Processes')
         ax1.set_title('Time Allotment', y=1.1)
 
+        line1x, line2x, line3x = [[0, 1.6 * len(tat) - 0.4]] * 3
+        line1y, line2y, line3y = [[total_wt / len(wt)] * 2, [total_tat / len(tat)] * 2, [total_rt / len(rt)] * 2]
         ax2.bar(x=[(1.6 * i) for i in range(0, len(wt))],
                 height=[x[1] for x in wt], width=[0.4] * len(wt), align='edge', 
                 color=['seagreen'] * len(wt), label='Waiting Time')
@@ -53,34 +67,28 @@ class Scheduler:
         ax2.bar(x=[0.8 + 1.6 * i for i in range(0, len(rt))], 
                 height=[x[1] for x in rt], width=[0.4] * len(rt), align='edge',
                 color=['blue'] * len(rt), label='Response Time')
+        ax2.plot(line1x, line1y, color='green', linestyle='-', linewidth=1, label='AvgWait')
+        ax2.plot(line2x, line2y, color='white', linestyle='--', linewidth=1, label='AvgTat')
+        ax2.plot(line3x, line3y, color='skyblue', linestyle=':', linewidth=1, label='AvgResp')
         ax2.set_xticks(ticks=[(0.6 + 1.6 * i) for i in range(0, len(wt))], labels=[x[0] for x in wt])
         ax2.set_xlabel('Process -->')
         ax2.set_ylabel('Wait / Turnaround Time / Response Time')
         ax2.set_title('Waiting time, TurnAround time, Response Time', y=1.1)
-        ax2.legend()
+        ax2.legend(loc='upper left', ncol=2)
 
         columns = ['Name', 'Wait Time', 'TurnAround Time', 'Response Time']
-        ax3.axis(False)
-        cell_text = []; total_wt = 0; total_tat = 0; total_rt = 0
-        for i in range(0, len(wt)):
-            cell_text.append([wt[i][0], wt[i][1], tat[i][1], rt[i][1]])
-            total_wt += wt[i][1]
-            total_tat += tat[i][1]
-            total_rt += rt[i][1]
-        cell_text.append(['Average', total_wt / len(wt), total_tat / len(tat), total_rt / len(rt)])
-
+        ax3.axis(False); ax3.axis('tight')
         table = ax3.table(colLabels=columns, cellText=cell_text, loc='center', cellLoc='center', cellColours=[['#000000'] * 4] * len(cell_text), colColours=['blue'] * 4)
         for cell in table.get_celld().values():
             cell.set_edgecolor('white')
         table.auto_set_font_size(False)
-        table.scale(1.2, 1.6)
         table.set_fontsize(10)
         ax3.set_title('Process Information', y=-0.1)
 
-        ax4.bar(x=[1,2,3], height=[tp,cu,csc], width=[0.4] * 3, tick_label=['ThroughPut%','CPU Utilization%','Context Swicth Count'],
+        ax4.bar(x=[1,2,3], height=[tp*100,cu,csc], width=[0.4] * 3, tick_label=['ThroughPut X 100','CPU Utilization%','Context Swicth Count'],
                 align='center', color=['skyblue','violet','green'])
         ax4.set_title("CPU reports", y=-0.3)
-        plt.show()
+        return fig
 
     def fifo(self):
         if len(self.proclist) == 0:
@@ -95,65 +103,78 @@ class Scheduler:
             wt.append((proctup[0], tm - proctup[1]))
             tm += proctup[2]
             tat.append((proctup[0], tm - proctup[1]))
-        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[0])
+        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
-        self.data = (intervals, wt, tat, wt, (len(proclist) * 100) / tott, (cut * 100) / tott, 0)
-        self.__present("First Come First Serve")
-        return self.data
-
+        self.data = (intervals, wt, tat, wt, len(proclist) / tott, (cut * 100) / tott, 0)
+        fig = self.__present("First Come First Serve")
+        return (fig, self.data)
+    
     def sjf(self):
         if len(self.proclist) == 0:
             return ([],[],[],[],0.0,0.0,0)
         proclist = self.proclist.copy()
         wt = []; tat = []; intervals = []
         proclist.sort(key = lambda x : (x[1], x[2]))
-        tm = 0
-        for proctup in proclist:
-            tm = max(tm, proctup[1])
-            intervals.append((proctup[0], tm, tm + proctup[2]))
-            wt.append((proctup[0], tm - proctup[1]))
-            tm += proctup[2]
-            tat.append((proctup[0], tm - proctup[1]))
-        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[0])
+        tm = proclist[0][1]; i = 0
+        heap = []
+        heapq.heapify(heap)
+        while True:
+            while i < len(proclist) and proclist[i][1] <= tm:
+                heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
+                i += 1
+            if len(heap) == 0:
+                break
+            else:
+                burst, arrive, name = heapq.heappop(heap)
+                intervals.append((name, tm, tm + burst))
+                tat.append((name, tm + burst - arrive))
+                wt.append((name, tm - arrive))
+                tm += burst
+        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
-        self.data = (intervals, wt, tat, wt, (len(proclist) * 100) / tott, (cut * 100) / tott, 0)
-        self.__present("Shortest Job First")
-        return self.data
+        self.data = (intervals, wt, tat, wt, len(proclist) / tott, (cut * 100) / tott, 0)
+        fig = self.__present("Shortest Job First")
+        return (fig, self.data)
 
     def srtf(self):
         if len(self.proclist) == 0:
             return ([],[],[],[],0.0,0.0,0)
         proclist = self.proclist.copy()
-        heap = []; intervals = []; tat = [-1] * len(proclist); wt = []; rt = [-1] * len(proclist); contextsw = 0
-        for i in range(0, len(proclist)):
-            heap.append((proclist[i][1], proclist[i][2], i))
-        heapq.heapify(heap)
-        while len(heap) > 0:
-            (curr_start,curr_burst,id) = heapq.heappop(heap)
-            if rt[id] == -1:
-                rt[id] = curr_start
-            if len(intervals) == 0 or intervals[len(intervals) - 1][0] != id:
-                intervals.append((id, curr_start, curr_start + 1))
+        proclist.sort(key=lambda x : (x[1], x[2]))
+        heap = []; heapq.heapify(heap); intervals = []; tat = {}; rt = {}
+        i = 0; tm = 0
+        while True:
+            while i < len(proclist) and tm >= proclist[i][1]:
+                heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
+                i += 1
+            if len(heap) == 0:
+                if i < len(proclist):
+                    tm = proclist[i][1]
+                    heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
+                    i += 1
+                else:
+                    break
+            curr_burst, curr_arrive, name = heapq.heappop(heap)
+            if len(intervals) > 0 and intervals[-1][0] == name:
+                intervals[-1] = (intervals[-1][0], intervals[-1][1], tm + 1)
             else:
-                intervals[-1] = (intervals[-1][0], intervals[-1][1], curr_start + 1)
-            tat[intervals[-1][0]] = intervals[-1][2]
+                intervals.append((name, tm, tm + 1))
+            if name not in rt:
+                rt[name] = tm - curr_arrive
+            tat[name] = tm + 1
+            tm += 1
             if curr_burst > 1:
-                heapq.heappush(heap, (curr_start + 1, curr_burst - 1, id))
-        intervals = [(proclist[x[0]], x[1], x[2]) for x in intervals]
-        for i in range(0, len(proclist)):
-            rt[i] = (proclist[i][0], rt[i] - proclist[i][1])
-            tat[i] = (proclist[i][0], tat[i] - proclist[i][1])
-            wt.append((proclist[i][0], tat[i][1] - proclist[i][2]))
-        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[0])
+                heapq.heappush(heap, (curr_burst - 1, curr_arrive, name))
+        wt = []
+        for nm, arrivetm, bursttm in proclist:
+            tat[nm] -= arrivetm
+            wt.append((nm, tat[nm] - bursttm))
+        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
-        contextswtrack = {x[0] : x[2] for x in proclist}
-        for x in intervals:
-            if contextswtrack[x[0]] > x[2] - x[1]:
-                contextsw += 1
-                contextswtrack[x[0]] -= x[2] - x[1]
-        self.data = (intervals, wt, tat, rt, (len(proclist) * 100) / tott, (cut * 100) / tott, contextsw)
-        self.__present("Shortest Remaining Time First")
-        return self.data
+        self.data = (intervals, wt, list(tat.items()), list(rt.items()), len(proclist) / tott, (cut * 100) / tott, len(intervals) - 1)
+        fig = self.__present('Shortest Remaining Time First')
+        return (fig, self.data)        
+
 
     def hrrf(self): # cpi stands for Current Process Index
         if len(self.proclist) == 0:
@@ -171,9 +192,9 @@ class Scheduler:
             tat.append((proclist[cpi][0], tm - proclist[cpi][1]))
         tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
-        self.data = (intervals, wt, tat, wt, (len(proclist) * 100) / tott, (cut * 100) / tott, 0)
-        self.__present("Highest Response Ratio First")
-        return self.data
+        self.data = (intervals, wt, tat, wt, len(proclist) / tott, (cut * 100) / tott, 0)
+        fig = self.__present("Highest Response Ratio First")
+        return (fig, self.data)
     
     def rr(self, ts): # ts means time slice, tm for time
         if len(self.proclist) == 0:
@@ -214,9 +235,9 @@ class Scheduler:
             if contextswtrack[x[0]] > x[2] - x[1]:
                 contextsw += 1
                 contextswtrack[x[0]] -= x[2] - x[1]
-        self.data = (intervals, wt, list(tat.items()), list(rt.items()), (len(proclist) * 100) / tott, (cut * 100) / tott, contextsw)
-        self.__present("Round Robin")
-        return self.data
+        self.data = (intervals, wt, list(tat.items()), list(rt.items()), len(proclist) / tott, (cut * 100) / tott, contextsw)
+        fig = self.__present("Round Robin")
+        return (fig, self.data)
     
     def prio_preemptive(self, pdl):
         if len(self.proclist) == 0 or len(self.proclist) != len(pdl):
@@ -259,9 +280,9 @@ class Scheduler:
             if contextswtrack[x[0]] > x[2] - x[1]:
                 contextsw += 1
                 contextswtrack[x[0]] -= x[2] - x[1]
-        self.data = (intervals, wt, list(tat.items()), list(rt.items()), (len(proclist) * 100) / tott, (cut * 100) / tott, contextsw)
-        self.__present("Priority Preemptive")
-        return self.data
+        self.data = (intervals, wt, list(tat.items()), list(rt.items()), len(proclist) / tott, (cut * 100) / tott, contextsw)
+        fig = self.__present("Priority Preemptive")
+        return (fig, self.data)
     
     def prio_no_preemptive(self, pdl):
         if len(self.proclist) == 0:
@@ -289,9 +310,9 @@ class Scheduler:
                 i += 1
         tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
-        self.data = (intervals, wt, tat, wt, (len(self.proclist) * 100) / tott, (cut * 100) / tott, 0)
-        self.__present("Priority No Preemptive")
-        return self.data
+        self.data = (intervals, wt, tat, wt, len(self.proclist) / tott, (cut * 100) / tott, 0)
+        fig = self.__present("Priority No Preemptive")
+        return (fig, self.data)
     
     def __mlq_fifo(self, systemq, tm, limit, intervals, tat, rt):
         while len(systemq) > 0:
@@ -350,8 +371,8 @@ class Scheduler:
     def mlq(self, pdl, qts, ts):
         if len(self.proclist) == 0:
             return ([],[],[],[],0.0,0.0,0)
-        systemlist = [(x[1],x[2],x[0]) for i, x in enumerate(self.proclist) if pdl[i] == 1]
-        userlist = [(x[1],x[2],x[0]) for i, x in enumerate(self.proclist) if pdl[i] == 2]
+        systemlist = [(x[1],x[2],x[0]) for i, x in enumerate(self.proclist) if pdl[i] % 2 == 1]
+        userlist = [(x[1],x[2],x[0]) for i, x in enumerate(self.proclist) if pdl[i] % 2 == 0]
         systemlist.sort(key=lambda x : x[0]); userlist.sort(key=lambda x : x[0])
         systemq = deque(systemlist); userq = deque(userlist); tm = 0; i = 0; contextsw = 0
         intervals = []; wt = []; tat = {}; rt = {}
@@ -383,14 +404,10 @@ class Scheduler:
                 contextswtrack[x[0]] -= x[2] - x[1]
         tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
-        self.data = (intervals, wt, list(tat.items()), list(rt.items()), (len(self.proclist) * 100) / tott, (cut * 100) / tott, contextsw)
-        self.__present("Multilevel Queue")
-        return self.data
+        self.data = (intervals, wt, list(tat.items()), list(rt.items()), len(self.proclist) / tott, (cut * 100) / tott, contextsw)
+        fig = self.__present("Multilevel Queue")
+        return (fig, self.data)
     
-if __name__ == '__main__':
-    proclist = [('P1',1,5),('P2',3,5),('P3',2,6),('P4',4,8)]
-    obj = Scheduler(proclist)
-    obj.mlq([1,1,2,2],2,1)
 
 
     

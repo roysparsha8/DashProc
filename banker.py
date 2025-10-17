@@ -1,7 +1,8 @@
-#data: list[tuple[str, list[tuple[str, tuple[int]]]]]
+#data: list[tuple[str, list[tuple[str, tuple[int, int]]]]]
 #maxAvail: dict[str, int]
 import matplotlib.pyplot as plt
 import networkx as nx
+import json
 
 def rescAllocation(rescQueries, maxAvail) -> None:
     for rescName, (rescAlloc, rescNeed) in rescQueries:
@@ -46,7 +47,6 @@ def present(data, maxAvail, seq):
     plt.style.use('dark_background')
     fig, axd = plt.subplot_mosaic('AB')
     axd['A'].set_title('Resource Allocation Graph')
-    axd['B'].set_title('Safe Sequence')
     fig.canvas.manager.set_window_title('BankersAlgorithm')
     pos1 = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos1, ax=axd['A'], nodelist=pnodes, node_shape='o', node_color='skyblue', node_size=500)
@@ -54,8 +54,10 @@ def present(data, maxAvail, seq):
     nx.draw_networkx_labels(G, pos1, ax=axd['A'], font_size=8, font_color='white')
     nx.draw_networkx_edges(G, pos1, ax=axd['A'], edge_color='grey', width=1, arrows=True, arrowstyle='-|>', arrowsize=20, connectionstyle='arc3,rad=0.25')
     if len(seq) == 0:
+        axd['b'].set_title('No Safe Sequence. Deadlock')
         plt.show()
         return
+    axd['B'].set_title('Safe Sequence')
     _G = nx.DiGraph()
     _G.add_node(seq[0])
     i = 1
@@ -67,7 +69,7 @@ def present(data, maxAvail, seq):
     nx.draw_networkx_nodes(_G, pos2, ax=axd['B'], node_shape='o', node_color='skyblue', node_size=500)
     nx.draw_networkx_labels(_G, pos2, ax=axd['B'], font_size=8, font_color='white')
     nx.draw_networkx_edges(_G, pos2, ax=axd['B'], width=1, arrows=True, edge_color='grey', arrowstyle='-|>', arrowsize=20, connectionstyle='arc3,rad=0.25')
-    plt.show()
+    return fig
 
 def banker(data, maxAvail):
     temp = maxAvail.copy()
@@ -76,14 +78,15 @@ def banker(data, maxAvail):
             if rescName in maxAvail:
                 maxAvail[rescName] -= rescAlloc
     seq = safetySeq(data, maxAvail)
-    present(data, temp, seq)
+    return present(data, temp, seq)
     
 if __name__ == '__main__':
     data = [
-        ('P1', [('R1', (0, 1)), ('R2', (1, 1))]),
-        ('P2', [('R1', (2, 1)), ('R2', (0, 1))]),
-        ('P3', [('R1', (1, 1)), ('R2', (1, 0))]),
+        ['P1', [['R1', [0, 1]], ['R2', [1, 1]]]],
+        ['P2', [['R1', [2, 1]], ['R2', [0, 1]]]],
+        ['P3', [['R1', [1, 1]], ['R2', [1, 0]]]],
     ]
     maxAvail = {'R1': 4, 'R2': 3}
-    banker(data, maxAvail)
+    print(json.dumps([data, maxAvail]))
+    # banker(data, maxAvail)
 

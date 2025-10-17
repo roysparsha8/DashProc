@@ -30,7 +30,7 @@ based on different native yet powerfull scheduling algorithms.
     python3 ui.py # In bash
     ```
 - The app uses inputs from files. Take help for format of input from the added example files - ```Book1.csv```(For Schedulers) and ```sample_data.json``` (For Bankers).
-- Watch the video for rest of explanation 
+- Watch the video for rest of explanation (Video service may be down. Sorry for inconvenience).
     [![Watch the demo](./assets/image1.png)](./assets/video1.mp4)
 - Note that, here ```ts``` stands for **Time Slice** which is required for Round Robin algorithm and ```qts``` stands for **Queue Time Slice** and it is required for applying Round Robin on queues in case of *Multilevel Feedback Queue*.
 - Other abbreviations - 

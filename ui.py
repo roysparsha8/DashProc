@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk, filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from schedulers import Scheduler
 from banker import banker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -7,8 +7,19 @@ import csv, json
 
 # iwc = Initial Window Configuration = (width, height, x_topleft, y_topleft, name, background_color)
 class App(Tk):
+    def customize_button(self, button, tp):
+        button.bind('<Enter>', lambda e: e.widget.configure(background=('#116bfc', '#37c20d')[tp == 2]))
+        button.bind('<Leave>', lambda e: e.widget.configure(background=('#bcbbbc', '#A5A5A5')[tp == 2]))
+        button.bind('<ButtonPress-1>', lambda e: e.widget.configure(background=('#063684', '#227d07')[tp == 2]))
+        button.bind('<ButtonRelease-1>', lambda e: e.widget.configure(background=('#116bfc', '#37c20d')[tp == 2]))
+
     def __init__(self):
         super().__init__()
+        self.nbdesign = {
+            'relief': 'flat',
+            'border': 0,
+            'highlightthickness': 0
+        }
         self.iwc = (1000, 600, 100, 50, 'My App', '#ffffff')
         self.default_font = ('Ubuntu Mono', 15)
         self.title(self.iwc[4])
@@ -19,11 +30,13 @@ class App(Tk):
         self.navbar2.place(relx=0, rely=0, relwidth=0.08, relheight=1)
         self.navbar2_content = Frame(self, background='#ffffff')
         self.navbar2_content.place(relx=0.08, rely=0, relwidth=0.92, relheight=1)
-        self.navbar2_tab1 = ttk.Button(self.navbar2, text='Scheduler', command=self.scheduler)
+        self.navbar2_tab1 = Button(self.navbar2, text='Scheduler', **self.nbdesign, background='#A5A5A5', activebackground='#227d07', command=self.scheduler)
+        self.customize_button(self.navbar2_tab1, 2)
         self.navbar2_tab1.place(relx=0, rely=0, relwidth=1, relheight=0.08 * (self.iwc[0] / self.iwc[1]))
-        self.navbar2_tab2 = ttk.Button(self.navbar2, text='Banker', command=self.deadlock_prevent)
+        self.navbar2_tab2 = Button(self.navbar2, text='Banker', **self.nbdesign, background='#A5A5A5', activebackground='#227d07', command=self.deadlock_prevent)
+        self.customize_button(self.navbar2_tab2, 2)
         self.navbar2_tab2.place(relx=0, rely=0.08 * (self.iwc[0] / self.iwc[1]), relwidth=1, relheight=0.08 * (self.iwc[0] / self.iwc[1]))
-        self.tsvalue = DoubleVar(value=1); self.qtsvalue = DoubleVar(value=1) # Auto synchronized variable
+        self.tsvalue = IntVar(value=1); self.qtsvalue = IntVar(value=1) # Auto synchronized variable
         self.pdlstr = StringVar(value=''); self.csv_filename = StringVar(value='')
         self.json_filename = StringVar(value='') # Auto synchronized variable
         self.scheduler()
@@ -42,7 +55,8 @@ class App(Tk):
         button_list = ['file','fifo','sjf','srtf','hrrf','rr','pp','pnp','mlq']
         self.button_handle = dict()
         for id, button_name in enumerate(button_list):
-            self.button_handle[button_name] = ttk.Button(self.navbar1, text=button_name, command=getattr(self, button_name+'_render'))
+            self.button_handle[button_name] = Button(self.navbar1, text=button_name, **self.nbdesign, background='#bcbbbc', activebackground='#063684', command=getattr(self, button_name+'_render'))
+            self.customize_button(self.button_handle[button_name], 1)
             self.button_handle[button_name].place(relx=id / len(button_list), rely=0, relwidth=(1 / len(button_list)), relheight=1)
         self.file_render()
 
@@ -52,9 +66,11 @@ class App(Tk):
         self.navbar1.place(relx=0, rely=0, relwidth=1, relheight=0.05)
         self.content = Frame(self.navbar2_content, background='#ffffff')
         self.content.place(relx=0, rely=0.05, relwidth=1, relheight=0.95)
-        self.banker_file_button = ttk.Button(self.navbar1, text='file', command=self.file_render2)
+        self.banker_file_button = Button(self.navbar1, text='file', **self.nbdesign, background='#bcbbbc', activebackground='#063684', command=self.file_render2)
+        self.customize_button(self.banker_file_button, 1)
         self.banker_file_button.place(relx=0, rely=0, relwidth=0.5, relheight=1)
-        self.banker_img_button = ttk.Button(self.navbar1, text='Output', command=self.image_render)
+        self.banker_img_button = Button(self.navbar1, text='Output', **self.nbdesign, background='#bcbbbc', activebackground='#063684', command=self.image_render)
+        self.customize_button(self.banker_img_button, 1)
         self.banker_img_button.place(relx=0.5, rely=0, relwidth=0.5, relheight=1)
         self.file_render2()
 
@@ -64,7 +80,7 @@ class App(Tk):
     
     def file_render(self):
         self.clear()
-        # self.label = ttk.Label(self.content, text='From File tab', font=self.default_font)
+        # self.label = Label(self.content, text='From File tab', font=self.default_font)
         # self.label.place(relx=0.4, rely=0.45, relwidth=0.2, relheight=0.1)
         self.file_entry = ttk.Entry(self.content, textvariable=self.csv_filename)
         self.file_entry.place(relx=0.3, rely=0.1, relwidth=0.2, relheight=0.1)
@@ -101,6 +117,10 @@ class App(Tk):
 
     def image_render(self):
         self.clear()
+        if not hasattr(self, 'input_data2'):
+            messagebox.showerror(title='Error', message='Enter data first')
+            self.file_render2()
+            return
         if len(self.input_data2) == 2 and type(self.input_data2[0]) == list and type(self.input_data2[1]) == dict:
             fig = banker(self.input_data2[0], self.input_data2[1])
         else:
@@ -152,83 +172,115 @@ class App(Tk):
             return [0]
 
     def fifo_render(self):
-        self.clear()
-        fig = self.handle_scheduler.fifo()[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        try:
+            self.clear()
+            fig = self.handle_scheduler.fifo()[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
+            self.file_render()
 
     def sjf_render(self):
-        self.clear()
-        fig = self.handle_scheduler.sjf()[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        try:
+            self.clear()
+            fig = self.handle_scheduler.sjf()[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
+            self.file_render()
 
     def srtf_render(self):
-        self.clear()
-        fig = self.handle_scheduler.srtf()[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        try:
+            self.clear()
+            fig = self.handle_scheduler.srtf()[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter daa first')
+            self.file_render()
 
     def hrrf_render(self):
-        self.clear()
-        fig = self.handle_scheduler.hrrf()[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        try:
+            self.clear()
+            fig = self.handle_scheduler.hrrf()[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
+            self.file_render()
 
     def rr_render(self):
-        self.clear()
-        fig = self.handle_scheduler.rr(int(self.tsvalue.get()))[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        try:
+            self.clear()
+            fig = self.handle_scheduler.rr(int(self.tsvalue.get()))[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
+            self.file_render()
 
     def pp_render(self):
-        self.clear()
-        pdlarrint = self.__read_pdl()
-        if len(pdlarrint) != len(self.input_data1):
-            messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+        try:
+            self.clear()
+            pdlarrint = self.__read_pdl()
+            if len(pdlarrint) != len(self.input_data1):
+                messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+                self.file_render()
+                return
+            fig = self.handle_scheduler.prio_preemptive(pdlarrint)[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
-            return
-        fig = self.handle_scheduler.prio_preemptive(pdlarrint)[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
 
     def pnp_render(self):
-        self.clear()
-        pdlarrint = self.__read_pdl()
-        if len(pdlarrint) != len(self.input_data1):
-            messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+        try:
+            self.clear()
+            pdlarrint = self.__read_pdl()
+            if len(pdlarrint) != len(self.input_data1):
+                messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+                self.file_render()
+                return
+            fig = self.handle_scheduler.prio_no_preemptive(pdlarrint)[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
-            return
-        fig = self.handle_scheduler.prio_no_preemptive(pdlarrint)[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
 
     def mlq_render(self):
-        self.clear()
-        pdlarrint = self.__read_pdl()
-        if len(pdlarrint) != len(self.input_data1):
-            messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+        try:
+            self.clear()
+            pdlarrint = self.__read_pdl()
+            if len(pdlarrint) != len(self.input_data1):
+                messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+                self.file_render()
+                return
+            fig = self.handle_scheduler.mlq(pdlarrint, int(self.qtsvalue.get()), int(self.tsvalue.get()))[0]
+            canvas = FigureCanvasTkAgg(fig, master=self.content)
+            canvas.draw()
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
-            return
-        fig = self.handle_scheduler.mlq(pdlarrint, int(self.qtsvalue.get()), int(self.tsvalue.get()))[0]
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
-        canvas.draw()
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
 
 if __name__ == '__main__':
     app = App()

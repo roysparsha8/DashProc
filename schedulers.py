@@ -11,8 +11,6 @@
 # ts - Time Slice, tm - Time
 # pdl - Priority Distribution List, p - Current Process's Priority, ariv - Current Process's arrival time, brst - Current Process Burst Time 
 
-
-# FIX - SRTF logic
 import heapq, random, math
 from collections import deque
 import matplotlib as mlp

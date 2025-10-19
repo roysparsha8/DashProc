@@ -18,8 +18,13 @@ class App(Tk):
         self.nbdesign = {
             'relief': 'flat',
             'border': 0,
-            'highlightthickness': 0
+            'highlightthickness': 0,
+            'font':('Ubuntu Mono', 12)
         }
+        #NOTE - ttk.Label and ttk.Entry fonts can be changed using font=('family', size) method inside function call and ttk.Button can't be.
+        #To change ttk.Button font, we need to use ttk.Style()
+        self.ttk_button_style = ttk.Style(self)
+        self.ttk_button_style.configure('Custom.TButton', font=('Ubuntu Mono', 15))
         self.iwc = (1000, 600, 100, 50, 'My App', '#ffffff')
         self.default_font = ('Ubuntu Mono', 15)
         self.title(self.iwc[4])
@@ -82,14 +87,14 @@ class App(Tk):
         self.clear()
         # self.label = Label(self.content, text='From File tab', font=self.default_font)
         # self.label.place(relx=0.4, rely=0.45, relwidth=0.2, relheight=0.1)
-        self.file_entry = ttk.Entry(self.content, textvariable=self.csv_filename)
+        self.file_entry = ttk.Entry(self.content, textvariable=self.csv_filename, font=('Ubuntu Mono', 13))
         self.file_entry.place(relx=0.3, rely=0.1, relwidth=0.2, relheight=0.1)
-        self.browse_button = ttk.Button(self.content, text='Browse', command=lambda: self.open_file_browser(('CSV', '*.csv')))
+        self.browse_button = ttk.Button(self.content, text='Browse', style='Custom.TButton', command=lambda: self.open_file_browser(('CSV', '*.csv')))
         self.browse_button.place(relx=0.5, rely=0.1, relwidth=0.1, relheight=0.1)
-        self.read_button = ttk.Button(self.content, text='Read', command=self.read_file1)
+        self.read_button = ttk.Button(self.content, text='Read', style='Custom.TButton', command=self.read_file1)
         self.read_button.place(relx=0.6, rely=0.1, relwidth=0.1, relheight=0.1)
 
-        self.pdl_entry = ttk.Entry(self.content, textvariable=self.pdlstr)
+        self.pdl_entry = ttk.Entry(self.content, textvariable=self.pdlstr, font=('Ubuntu Mono', 13))
         self.pdl_entry.place(relx=0.3, rely=0.3, relwidth=0.2, relheight=0.1)
         self.pdl_label = ttk.Label(self.content, text='', font=('Ubuntu Mono', 10), background='#ffffff')
         self.pdl_label.place(relx=0.5, rely=0.3, relwidth=0.45, relheight=0.1)
@@ -108,16 +113,16 @@ class App(Tk):
 
     def file_render2(self):
         self.clear()
-        self.file_entry = ttk.Entry(self.content, textvariable=self.json_filename)
+        self.file_entry = ttk.Entry(self.content, textvariable=self.json_filename, font=('Ubuntu Mono', 13))
         self.file_entry.place(relx=0.3, rely=0.45, relwidth=0.2, relheight=0.1)
-        self.browse_button = ttk.Button(self.content, text='Browse', command=lambda: self.open_file_browser(('JSON', '*.json')))
+        self.browse_button = ttk.Button(self.content, text='Browse', style='Custom.TButton', command=lambda: self.open_file_browser(('JSON', '*.json')))
         self.browse_button.place(relx=0.5, rely=0.45, relwidth=0.1, relheight=0.1)
-        self.read_button = ttk.Button(self.content, text='Read', command=self.read_file2)
+        self.read_button = ttk.Button(self.content, text='Read', style='Custom.TButton', command=self.read_file2)
         self.read_button.place(relx=0.6, rely=0.45, relwidth=0.1, relheight=0.1)
 
     def image_render(self):
         self.clear()
-        if not hasattr(self, 'input_data2'):
+        if not hasattr(self, 'input_data2') or not self.input_data2:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render2()
             return
@@ -160,16 +165,20 @@ class App(Tk):
                 self.input_data2 = json.loads(f.read())
         except Exception as e:
             messagebox.showerror(title='Error', message=f'{e}')
-
+        
     def __read_pdl(self):
-        pdlstr = self.pdlstr.get()
+        pdlstr = self.pdlstr.get().strip()
         if len(pdlstr) == 0:
             return []
-        elif ',' in pdlstr:
-            pdlarr = pdlstr.split(',')
-            return [int(x) if x.isdigit() else 0 for x in pdlarr]
         else:
-            return [0]
+            testarr = pdlstr.split(','); ans = []
+            for unit in testarr:
+                try:
+                    val = int(unit)
+                    ans.append(val)
+                except Exception:
+                    return []
+            return ans
 
     def fifo_render(self):
         try:
@@ -179,6 +188,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
@@ -191,6 +201,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
@@ -203,6 +214,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter daa first')
             self.file_render()
@@ -215,6 +227,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
@@ -227,6 +240,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
@@ -236,7 +250,7 @@ class App(Tk):
             self.clear()
             pdlarrint = self.__read_pdl()
             if len(pdlarrint) != len(self.input_data1):
-                messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+                messagebox.showerror(title='Error', message='Priority distribution inappropriate. Check guidelines for help')
                 self.file_render()
                 return
             fig = self.handle_scheduler.prio_preemptive(pdlarrint)[0]
@@ -244,6 +258,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
@@ -253,7 +268,7 @@ class App(Tk):
             self.clear()
             pdlarrint = self.__read_pdl()
             if len(pdlarrint) != len(self.input_data1):
-                messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+                messagebox.showerror(title='Error', message='Priority distribution inappropriate. Check guidelines for help')
                 self.file_render()
                 return
             fig = self.handle_scheduler.prio_no_preemptive(pdlarrint)[0]
@@ -261,6 +276,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()
@@ -270,7 +286,7 @@ class App(Tk):
             self.clear()
             pdlarrint = self.__read_pdl()
             if len(pdlarrint) != len(self.input_data1):
-                messagebox.showerror(title='Error', message=f'Priority distribution length must be {len(self.input_data1)}')
+                messagebox.showerror(title='Error', message='Priority distribution inappropriate. Check guidelines for help')
                 self.file_render()
                 return
             fig = self.handle_scheduler.mlq(pdlarrint, int(self.qtsvalue.get()), int(self.tsvalue.get()))[0]
@@ -278,6 +294,7 @@ class App(Tk):
             canvas.draw()
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
+            self.animation = getattr(fig, 'animation', None)
         except Exception as e:
             messagebox.showerror(title='Error', message='Enter data first')
             self.file_render()

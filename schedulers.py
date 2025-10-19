@@ -13,11 +13,12 @@
 
 
 # FIX - SRTF logic
-import heapq, random
+import heapq, random, math
 from collections import deque
 import matplotlib as mlp
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.animation import FuncAnimation
 
 mlp.rcParams['toolbar'] = 'None'
 
@@ -74,7 +75,8 @@ class Scheduler:
         ax2.set_xlabel('Process -->')
         ax2.set_ylabel('Wait / Turnaround Time / Response Time')
         ax2.set_title('Waiting time, TurnAround time, Response Time', y=1.1)
-        ax2.legend(loc='upper left', ncol=2)
+        leg = ax2.legend(loc='upper left', ncol=2)
+        leg.set_zorder(1000)
 
         columns = ['Name', 'Wait Time', 'TurnAround Time', 'Response Time']
         ax3.axis(False); ax3.axis('tight')
@@ -88,6 +90,18 @@ class Scheduler:
         ax4.bar(x=[1,2,3], height=[tp*100,cu,csc], width=[0.4] * 3, tick_label=['ThroughPut X 100','CPU Utilization%','Context Swicth Count'],
                 align='center', color=['skyblue','violet','green'])
         ax4.set_title("CPU reports", y=-0.3)
+        ax1_barwidth = [bar.get_width() for bar in ax1.patches]
+        ax2_barheight = [bar.get_height() for bar in ax2.patches]
+        ax4_barheight = [bar.get_height() for bar in ax4.patches]
+        def update(frame):
+            for i, bar in enumerate(ax1.patches):
+                bar.set_width(ax1_barwidth[i] * math.sin(math.pi * frame / 200))
+            for i, bar in enumerate(ax2.patches):
+                bar.set_height(ax2_barheight[i] * math.sin(math.pi * frame / 200))
+            for i, bar in enumerate(ax4.patches):
+                bar.set_height(ax4_barheight[i] * math.sin(math.pi * frame / 200))
+            return [*ax1.patches, *ax2.patches, *ax4.patches, leg]
+        fig.animation = FuncAnimation(fig, update, frames=100, interval=0.1, blit=True, repeat=False)
         return fig
 
     def fifo(self):

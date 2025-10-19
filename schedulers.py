@@ -260,10 +260,10 @@ class Scheduler:
         temp = []
         for i in range(0, len(pdl)):
             temp.append((proclist[i][1], proclist[i][2], i))
-        temp.sort(reverse=False)
+        temp.sort(reverse=False, key=lambda x: (x[0], pdl[x[2]], x[1]))
         heap = []; intervals = []; tat = {}; wt = []; rt = {}; contextsw = 0
         i = 0
-        heapq.heapify(heap); tm = temp[0][0]
+        heapq.heapify(heap); tm = 0
         while True:
             if i == len(temp) and len(heap) == 0:
                 break

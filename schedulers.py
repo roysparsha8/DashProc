@@ -38,7 +38,7 @@ class Scheduler:
             total_wt += wt[i][1]
             total_tat += tat[i][1]
             total_rt += rt[i][1]
-        cell_text.append(['Average', total_wt / len(wt), total_tat / len(tat), total_rt / len(rt)])
+        cell_text.append(['Average', round(total_wt * 100 / len(wt)) / 100, round(total_tat * 100 / len(tat)) / 100, round(total_rt * 100 / len(rt)) / 100])
         plt.style.use('dark_background')
         fig, axesDict = plt.subplot_mosaic('AB\nCD', layout='constrained')
         fig.canvas.manager.set_window_title(title=title)
@@ -98,7 +98,10 @@ class Scheduler:
                 bar.set_height(ax2_barheight[i] * math.sin(math.pi * frame / 200))
             for i, bar in enumerate(ax4.patches):
                 bar.set_height(ax4_barheight[i] * math.sin(math.pi * frame / 200))
-            return [*ax1.patches, *ax2.patches, *ax4.patches, leg]
+            for line in ax2.lines:
+                xdata = line.get_xdata()
+                line.set_xdata([0, (1.6 * len(tat) - 0.4) * math.sin(math.pi * frame / 200)])
+            return [*ax1.patches, *ax2.patches, *ax4.patches, *ax2.lines, leg]
         fig.animation = FuncAnimation(fig, update, frames=100, interval=0.1, blit=True, repeat=False)
         return fig
 
@@ -127,7 +130,7 @@ class Scheduler:
         proclist = self.proclist.copy()
         wt = []; tat = []; intervals = []
         proclist.sort(key = lambda x : (x[1], x[2]))
-        tm = proclist[0][1]; i = 0
+        tm = 0; i = 0
         heap = []
         heapq.heapify(heap)
         while True:
@@ -135,13 +138,18 @@ class Scheduler:
                 heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
                 i += 1
             if len(heap) == 0:
-                break
-            else:
-                burst, arrive, name = heapq.heappop(heap)
-                intervals.append((name, tm, tm + burst))
-                tat.append((name, tm + burst - arrive))
-                wt.append((name, tm - arrive))
-                tm += burst
+                if i == len(proclist):
+                    break
+                else:
+                    tm = proclist[i][1]
+                    while i < len(proclist) and proclist[i][1] == tm:
+                        heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
+                        i += 1
+            burst, arrive, name = heapq.heappop(heap)
+            intervals.append((name, tm, tm + burst))
+            tat.append((name, tm + burst - arrive))
+            wt.append((name, tm - arrive))
+            tm += burst
         tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
         self.data = (intervals, wt, tat, wt, len(proclist) / tott, (cut * 100) / tott, 0)
@@ -162,8 +170,9 @@ class Scheduler:
             if len(heap) == 0:
                 if i < len(proclist):
                     tm = proclist[i][1]
-                    heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
-                    i += 1
+                    while i < len(proclist) and tm == proclist[i][1]:
+                        heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
+                        i += 1
                 else:
                     break
             curr_burst, curr_arrive, name = heapq.heappop(heap)
@@ -221,7 +230,7 @@ class Scheduler:
                 rt[q[0][0]] = tm
             if ts >= q[0][2]:
                 if len(intervals) > 0 and intervals[-1][0] == q[0][0] and intervals[-1][2] == tm:
-                    intervals[len(intervals) - 1] = (intervals[-1][0], intervals[-1][1], tm + q[0][2])
+                    intervals[-1] = (intervals[-1][0], intervals[-1][1], tm + q[0][2])
                 else:
                     intervals.append((q[0][0], tm, tm + q[0][2]))
                 tm += q[0][2]
@@ -229,7 +238,7 @@ class Scheduler:
                 q.popleft()
             else:
                 if len(intervals) > 0 and intervals[len(intervals) - 1][0] == q[0][0] and intervals[-1][2] == tm:
-                    intervals[len(intervals) - 1][2] = tm + ts
+                    intervals[-1] = (intervals[-1][0], intervals[-1][1], tm + ts)
                 else:
                     intervals.append((q[0][0], tm, tm + ts))
                 tm += ts
@@ -252,41 +261,43 @@ class Scheduler:
         return (fig, self.data)
     
     def prio_preemptive(self, pdl):
-        if len(self.proclist) == 0 or len(self.proclist) != len(pdl):
+        if(len(self.proclist) == 0 or len(self.proclist) != len(pdl)):
             return ([],[],[],[],0.0,0.0,0)
         proclist = self.proclist.copy()
-        temp = []
-        for i in range(0, len(pdl)):
-            temp.append((proclist[i][1], proclist[i][2], i))
-        temp.sort(reverse=False, key=lambda x: (x[0], pdl[x[2]], x[1]))
-        heap = []; intervals = []; tat = {}; wt = []; rt = {}; contextsw = 0
-        i = 0
-        heapq.heapify(heap); tm = 0
+        temp = [(x[1], x[2], id) for id, x in enumerate(proclist)]
+        temp.sort(reverse=False, key=lambda x: (x[0], pdl[x[2]], x[1], id)) # temp = [(arrivtm, bursttm, id)]
+        heap = []; heapq.heapify(heap) # heap = [(priority, arrivtm, bursttm, id)]
+        intervals = []; rt = {}; tat = {}; wt = []
+        i, tm, contextsw = 0, 0, 0
         while True:
-            if i == len(temp) and len(heap) == 0:
-                break
-            if i < len(temp):
-                tm = max(tm, temp[i][0])
-            while i < len(temp) and temp[i][0] <= tm:
-                heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], i))
+            while i < len(temp) and tm >= temp[i][0]:
+                heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
                 i += 1
-            (p, ariv, brst, id) = heapq.heappop(heap)
-            if proclist[id][0] not in rt:
-                rt[proclist[id][0]] = tm
-            if len(intervals) == 0 or intervals[len(intervals) - 1][0] != proclist[id][0]:
-                intervals.append((proclist[id][0], tm, tm + 1))
+            if len(heap) == 0:
+                if i == len(temp):
+                    break
+                else:
+                    tm = temp[i][0]
+                    while i < len(temp) and tm == temp[i][0]:
+                        heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
+                        i += 1
+            prty, arrvtm, brsttm, idx = heapq.heappop(heap)
+            if proclist[idx][0] not in rt:
+                rt[proclist[idx][0]] = tm
+            if len(intervals) == 0 or intervals[-1][0] != proclist[idx][0]:
+                intervals.append((proclist[idx][0], tm, tm + 1))
             else:
                 intervals[-1] = (intervals[-1][0], intervals[-1][1], tm + 1)
-            tat[proclist[id][0]] = tm + 1
-            if brst > 1:
-                heapq.heappush(heap, (p + 1, ariv, brst - 1, id))
+            tat[proclist[idx][0]] = tm + 1
+            if brsttm > 1:
+                heapq.heappush(heap, (prty, arrvtm, brsttm - 1, idx))
             tm += 1
         for x in proclist:
             rt[x[0]] -= x[1]
             tat[x[0]] -= x[1]
             wt.append((x[0], tat[x[0]] - x[2]))
-        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
-        cut = sum([(x[2] - x[1]) for x in intervals])
+        tott = max(intervals, key=lambda x: x[2])[2] - min(intervals, key=lambda x: x[1])[1]
+        cut = sum([x[2] - x[1] for x in intervals])
         contextswtrack = {x[0] : x[2] for x in proclist}
         for x in intervals:
             if contextswtrack[x[0]] > x[2] - x[1]:
@@ -295,36 +306,38 @@ class Scheduler:
         self.data = (intervals, wt, list(tat.items()), list(rt.items()), len(proclist) / tott, (cut * 100) / tott, contextsw)
         fig = self.__present("Priority Preemptive")
         return (fig, self.data)
-    
-    def prio_no_preemptive(self, pdl):
+
+    def prio_no_preemptive(self, pdl): # Edit in this code (BUG)
         if len(self.proclist) == 0:
             return ([],[],[],[],0.0,0.0,0)
-        temp = [(x[1], pdl[i], x[2], i) for i, x in enumerate(self.proclist)]
-        temp.sort(reverse=False)
-        tm = 0; i = 1
-        heap = [(temp[0][1], temp[0][0], temp[0][2], temp[0][3])]; intervals = []; tat = []; wt = []
-        heapq.heapify(heap)
-        cnt = 0
+        temp = [(x[1], x[2], i) for i, x in enumerate(self.proclist)]
+        temp.sort(reverse=False, key=lambda x: (x[0], pdl[x[2]], x[1]))
+        tm = 0; i = 0
+        heap = []; heapq.heapify(heap)
+        intervals = []; tat = []; wt = []
         while True:
-            if len(heap) > 0:
-                currp = heapq.heappop(heap)
-                tm = max(tm, currp[1])
-                intervals.append((self.proclist[currp[3]][0], tm, tm + currp[2]))
-                tat.append((self.proclist[currp[3]][0], tm + currp[2] - currp[1]))
-                wt.append((self.proclist[currp[3]][0], tm - currp[1]))
-                tm += currp[2]
-            elif i < len(temp):
-                tm = temp[i][0]
-            else:
-                break
             while i < len(temp) and tm >= temp[i][0]:
-                heapq.heappush(heap, (temp[i][1], temp[i][0], temp[i][2], temp[i][3]))
+                heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
                 i += 1
-        tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
+            if len(heap) == 0:
+                if i < len(temp):
+                    tm = temp[i][0]
+                    while i < len(temp) and tm == temp[i][0]:
+                        heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
+                        i += 1
+                else:
+                    break
+            prty, arrvtm, bursttm, idx = heapq.heappop(heap)
+            intervals.append((self.proclist[idx][0], tm, tm + bursttm))
+            tat.append((self.proclist[idx][0], tm + bursttm - arrvtm))
+            wt.append((self.proclist[idx][0], tm - arrvtm))
+            tm += bursttm
+        tott = max(intervals, key=lambda x: x[2])[2] - min(intervals, key=lambda x: x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
         self.data = (intervals, wt, tat, wt, len(self.proclist) / tott, (cut * 100) / tott, 0)
         fig = self.__present("Priority No Preemptive")
         return (fig, self.data)
+
     
     def __mlq_fifo(self, systemq, tm, limit, intervals, tat, rt):
         while len(systemq) > 0:

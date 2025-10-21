@@ -21,7 +21,7 @@ class App(Tk):
             'highlightthickness': 0,
             'font':('Ubuntu Mono', 12)
         }
-        #NOTE - ttk.Label and ttk.Entry fonts can be changed using font=('family', size) method inside function call and ttk.Button can't be.
+        # NOTE - ttk.Label and ttk.Entry fonts can be changed using font=('family', size) method inside function call and ttk.Button can't be.
         #To change ttk.Button font, we need to use ttk.Style()
         self.ttk_button_style = ttk.Style(self)
         self.ttk_button_style.configure('Custom.TButton', font=('Ubuntu Mono', 15))
@@ -142,6 +142,7 @@ class App(Tk):
 
     def open_file_browser(self, filetype):
         file_path = filedialog.askopenfilename(title='Select a file', filetypes=[filetype])
+        self.file_entry.delete(0, END)
         self.file_entry.insert(0, file_path)
 
     def read_file1(self):
@@ -278,7 +279,7 @@ class App(Tk):
             canvas_widget.place(relx=0, rely=0, relwidth=1, relheight=1)
             self.animation = getattr(fig, 'animation', None)
         except Exception as e:
-            messagebox.showerror(title='Error', message='Enter data first')
+            messagebox.showerror(title='Error', message=f'Enter data first {e}')
             self.file_render()
 
     def mlq_render(self):

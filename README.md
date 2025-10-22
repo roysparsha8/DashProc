@@ -31,7 +31,7 @@ based on different native yet powerfull scheduling algorithms.
     ```
 - The app uses inputs from files. Take help for format of input from the added example files - ```Book1.csv```(For Schedulers) and ```sample_data.json``` (For Bankers).
 - Watch the video for rest of explanation.
-    <video src="https://github.com/user-attachments/assets/d46eab3a-1399-4d42-af48-24c93ecdfaf0" width="400" controls muted autoplay>Sorry, Video service is temporarily unavailable</video>
+    ![![Sorry, video may be unavailable](./assets/image1.png)](./assets/video1.mp4)
 - Note that, here ```ts``` stands for **Time Slice** which is required for Round Robin algorithm and ```qts``` stands for **Queue Time Slice** and it is required for applying Round Robin on queues in case of *Multilevel Feedback Queue*.
 - Other abbreviations - 
     - ```fifo``` - First Inn First Out.

@@ -19,13 +19,13 @@ class App(Tk):
             'relief': 'flat',
             'border': 0,
             'highlightthickness': 0,
-            'font':('Ubuntu Mono', 12)
+            'font': ('Ubuntu Mono', 12)
         }
         # NOTE - ttk.Label and ttk.Entry fonts can be changed using font=('family', size) method inside function call and ttk.Button can't be.
-        #To change ttk.Button font, we need to use ttk.Style()
+        # To change ttk.Button font, we need to use ttk.Style()
         self.ttk_button_style = ttk.Style(self)
         self.ttk_button_style.configure('Custom.TButton', font=('Ubuntu Mono', 15))
-        
+
         self.iwc = (1000, 600, 100, 50, 'My App', '#ffffff')
         self.default_font = ('Ubuntu Mono', 15)
         self.title(self.iwc[4])

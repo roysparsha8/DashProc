@@ -207,9 +207,10 @@ class Scheduler:
         while len(visit) > 0:
             cpi = max(visit, key = lambda x : (tm - proclist[x][1] + proclist[x][2]) / proclist[x][2])
             visit.remove(cpi)
+            tm = max(tm, proclist[cpi][1])
             intervals.append((proclist[cpi][0], tm, tm + proclist[cpi][2]))
             wt.append((proclist[cpi][0], tm - proclist[cpi][1]))
-            tm = proclist[cpi][2] + max(proclist[cpi][1], tm)
+            tm += proclist[cpi][2] + max(proclist[cpi][1], tm)
             tat.append((proclist[cpi][0], tm - proclist[cpi][1]))
         tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])

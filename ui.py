@@ -25,6 +25,7 @@ class App(Tk):
         #To change ttk.Button font, we need to use ttk.Style()
         self.ttk_button_style = ttk.Style(self)
         self.ttk_button_style.configure('Custom.TButton', font=('Ubuntu Mono', 15))
+        
         self.iwc = (1000, 600, 100, 50, 'My App', '#ffffff')
         self.default_font = ('Ubuntu Mono', 15)
         self.title(self.iwc[4])

@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox, ttk
 from schedulers import Scheduler
 from banker import banker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from pathlib import Path
 import csv, json
 
 # iwc = Initial Window Configuration = (width, height, x_topleft, y_topleft, name, background_color)
@@ -26,10 +27,14 @@ class App(Tk):
         self.ttk_button_style = ttk.Style(self)
         self.ttk_button_style.configure('Custom.TButton', font=('Ubuntu Mono', 15))
 
-        self.iwc = (1000, 600, 100, 50, 'My App', '#ffffff')
+        self.iwc = (1000, 600, 100, 50, 'DashProc', '#ffffff')
         self.default_font = ('Ubuntu Mono', 15)
         self.title(self.iwc[4])
         self.geometry(f'{self.iwc[0]}x{self.iwc[1]}+{self.iwc[2]}+{self.iwc[3]}') # Sets witdh=1000, height=600, x_topleft=100, y_topleft=50 of main window
+
+        dirname = Path(__file__).resolve().parent
+        self.iconbitmap(f'{dirname}/assets/icon.ico')
+        
         self.configure(background=self.iwc[5])
         
         self.navbar2 = Frame(self, background="#272626")

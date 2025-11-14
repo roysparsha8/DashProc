@@ -204,7 +204,7 @@ class Scheduler:
             tm = max(tm, proclist[cpi][1])
             intervals.append((proclist[cpi][0], tm, tm + proclist[cpi][2]))
             wt.append((proclist[cpi][0], tm - proclist[cpi][1]))
-            tm += proclist[cpi][2] + max(proclist[cpi][1], tm)
+            tm += proclist[cpi][2]
             tat.append((proclist[cpi][0], tm - proclist[cpi][1]))
         tott = max(intervals, key=lambda x : x[2])[2] - min(intervals, key=lambda x : x[1])[1]
         cut = sum([(x[2] - x[1]) for x in intervals])
@@ -310,9 +310,9 @@ class Scheduler:
         while True:
             if len(heap) == 0:
                 if i == len(temp):
-                    tm = max(tm, temp[i][0])
-                else:
                     break
+                else:
+                    tm = max(tm, temp[i][0])
             while i < len(temp) and tm >= temp[i][0]:
                 heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
                 i += 1

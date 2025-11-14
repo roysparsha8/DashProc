@@ -134,17 +134,14 @@ class Scheduler:
         heap = []
         heapq.heapify(heap)
         while True:
-            while i < len(proclist) and proclist[i][1] <= tm:
-                heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
-                i += 1
             if len(heap) == 0:
                 if i == len(proclist):
                     break
                 else:
-                    tm = proclist[i][1]
-                    while i < len(proclist) and proclist[i][1] == tm:
-                        heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
-                        i += 1
+                    tm = max(tm, proclist[i][1])
+            while i < len(proclist) and proclist[i][1] <= tm:
+                heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
+                i += 1
             burst, arrive, name = heapq.heappop(heap)
             intervals.append((name, tm, tm + burst))
             tat.append((name, tm + burst - arrive))
@@ -164,17 +161,14 @@ class Scheduler:
         heap = []; heapq.heapify(heap); intervals = []; tat = {}; rt = {}
         i = 0; tm = 0
         while True:
+            if len(heap) == 0:
+                if i == len(proclist):
+                    break 
+                else:
+                    tm = max(tm, proclist[i][1])
             while i < len(proclist) and tm >= proclist[i][1]:
                 heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
                 i += 1
-            if len(heap) == 0:
-                if i < len(proclist):
-                    tm = proclist[i][1]
-                    while i < len(proclist) and tm == proclist[i][1]:
-                        heapq.heappush(heap, (proclist[i][2], proclist[i][1], proclist[i][0]))
-                        i += 1
-                else:
-                    break
             curr_burst, curr_arrive, name = heapq.heappop(heap)
             if len(intervals) > 0 and intervals[-1][0] == name:
                 intervals[-1] = (intervals[-1][0], intervals[-1][1], tm + 1)
@@ -271,17 +265,14 @@ class Scheduler:
         intervals = []; rt = {}; tat = {}; wt = []
         i, tm, contextsw = 0, 0, 0
         while True:
-            while i < len(temp) and tm >= temp[i][0]:
-                heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
-                i += 1
             if len(heap) == 0:
                 if i == len(temp):
                     break
                 else:
-                    tm = temp[i][0]
-                    while i < len(temp) and tm == temp[i][0]:
-                        heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
-                        i += 1
+                    tm = max(tm, temp[i][0])
+            while i < len(temp) and tm >= temp[i][0]:
+                heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
+                i += 1
             prty, arrvtm, brsttm, idx = heapq.heappop(heap)
             if proclist[idx][0] not in rt:
                 rt[proclist[idx][0]] = tm
@@ -317,17 +308,14 @@ class Scheduler:
         heap = []; heapq.heapify(heap)
         intervals = []; tat = []; wt = []
         while True:
+            if len(heap) == 0:
+                if i == len(temp):
+                    tm = max(tm, temp[i][0])
+                else:
+                    break
             while i < len(temp) and tm >= temp[i][0]:
                 heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
                 i += 1
-            if len(heap) == 0:
-                if i < len(temp):
-                    tm = temp[i][0]
-                    while i < len(temp) and tm == temp[i][0]:
-                        heapq.heappush(heap, (pdl[temp[i][2]], temp[i][0], temp[i][1], temp[i][2]))
-                        i += 1
-                else:
-                    break
             prty, arrvtm, bursttm, idx = heapq.heappop(heap)
             intervals.append((self.proclist[idx][0], tm, tm + bursttm))
             tat.append((self.proclist[idx][0], tm + bursttm - arrvtm))

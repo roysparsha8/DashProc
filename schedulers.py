@@ -1,6 +1,10 @@
 # proclist is list of tuples (process_name, arrival_time, burst_time)
 # tat stands for Turn Around Time
 # wt stands for Waiting Time
+# rt stands for Response Time
+# tp stands for throughput
+# cu stands for CPU utilization
+# csc stands for Context Switch Count
 # fifo - First Come First Serve Scheduler
 # sjf - Shortest job First Scheduler
 # srtf - Shortest Remaining Time First Scheduler

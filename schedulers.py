@@ -424,24 +424,3 @@ class Scheduler:
         self.data = (intervals, wt, list(tat.items()), list(rt.items()), len(self.proclist) / tott, (cut * 100) / tott, contextsw)
         fig = self.__present("Multilevel Queue")
         return (fig, self.data)
-    
-
-
-    
-
-
-        
-        
-
-
-
-
-        
-
-
-        
-
-
-
-
-

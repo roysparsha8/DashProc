@@ -103,7 +103,6 @@ class Scheduler:
             for i, bar in enumerate(ax4.patches):
                 bar.set_height(ax4_barheight[i] * math.sin(math.pi * frame / 200))
             for line in ax2.lines:
-                xdata = line.get_xdata()
                 line.set_xdata([0, (1.6 * len(tat) - 0.4) * math.sin(math.pi * frame / 200)])
             return [*ax1.patches, *ax2.patches, *ax4.patches, *ax2.lines, leg]
         fig.animation = FuncAnimation(fig, update, frames=100, interval=0.1, blit=True, repeat=False)

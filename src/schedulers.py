@@ -105,7 +105,7 @@ class Scheduler:
             for line in ax2.lines:
                 line.set_xdata([0, (1.6 * len(tat) - 0.4) * math.sin(math.pi * frame / 200)])
             return [*ax1.patches, *ax2.patches, *ax4.patches, *ax2.lines, leg]
-        fig.animation = FuncAnimation(fig, update, frames=100, interval=0.1, blit=True, repeat=False)
+        fig.animation = FuncAnimation(fig, update, frames=101, interval=0.1, blit=True, repeat=False)
         return fig
 
     def fifo(self):
